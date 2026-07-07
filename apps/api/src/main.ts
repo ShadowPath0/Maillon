@@ -15,7 +15,9 @@ async function bootstrap() {
   app.useStaticAssets(join(process.cwd(), process.env.STORAGE_LOCAL_PATH ?? "storage/uploads"), {
     prefix: "/uploads",
   });
-  const port = process.env.API_PORT ?? 3001;
+  // Render (et la plupart des PaaS) imposent leur propre port via $PORT ;
+  // API_PORT reste utilisé en local où $PORT n'est pas défini.
+  const port = process.env.PORT ?? process.env.API_PORT ?? 3001;
   await app.listen(port);
   console.log(`API démarrée sur http://localhost:${port}/api`);
 }
