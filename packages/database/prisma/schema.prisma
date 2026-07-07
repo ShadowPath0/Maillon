@@ -1,0 +1,356 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  MEMBRE
+  SOUS_TRAITANT
+}
+
+enum Disponibilite {
+  DISPONIBLE
+  OCCUPE
+  INDISPONIBLE
+}
+
+enum StatutSousTraitant {
+  ACTIF
+  INACTIF
+}
+
+enum TypeDocumentAdministratif {
+  KBIS
+  ATTESTATION_URSSAF
+  ATTESTATION_ASSURANCE
+  RIB
+  AUTRE
+}
+
+enum StatutMission {
+  BRIEF_ENVOYE
+  EN_COURS
+  LIVRE
+  EN_VALIDATION
+  VALIDE
+  REJETE
+}
+
+enum StatutContrat {
+  BROUILLON
+  ENVOYE
+  SIGNE
+}
+
+enum StatutLivrable {
+  SOUMIS
+  VALIDE
+  REJETE
+}
+
+enum StatutFacture {
+  RECUE
+  A_PAYER
+  PAYEE
+  EN_RETARD
+}
+
+enum TypeNotification {
+  MISSION_ASSIGNEE
+  LIVRABLE_SOUMIS
+  LIVRABLE_VALIDE
+  LIVRABLE_REJETE
+  FACTURE_EN_RETARD
+  DOCUMENT_EXPIRE_BIENTOT
+  CONTRAT_ENVOYE
+  CONTRAT_SIGNE
+  INVITATION_MEMBRE
+  INVITATION_SOUS_TRAITANT
+}
+
+enum PlanAbonnement {
+  ESSAI
+  STARTER
+  PRO
+}
+
+// ---------------------------------------------------------------------------
+// Agence / utilisateurs
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id            String         @id @default(uuid())
+  nom           String
+  planAbonnement PlanAbonnement @default(ESSAI)
+
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+  stripeStatus         String?
+
+  dateCreation  DateTime       @default(now())
+
+  membres              User[]                 @relation("MembresAgence")
+  missions             Mission[]
+  contractorLinks      OrganizationContractor[]
+  invitations          Invitation[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  motDePasseHash String
+  nom            String
+  role           Role
+
+  // Uniquement pour ADMIN / MEMBRE : rattachement à une agence.
+  // Un SOUS_TRAITANT n'appartient à aucune agence unique (il peut travailler
+  // pour plusieurs agences ; voir OrganizationContractor).
+  organizationId String?
+  organization   Organization? @relation("MembresAgence", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  contractorProfile ContractorProfile?
+
+  dateCreation DateTime  @default(now())
+  deletedAt    DateTime?
+
+  missionsAssignees   Mission[]      @relation("MissionsSousTraitant")
+  facturesEmises      Invoice[]      @relation("FacturesSousTraitant")
+  notifications       Notification[]
+  commentairesMission MissionComment[]
+
+  @@map("users")
+}
+
+// Profil freelance : compétences, tarifs, disponibilité — propre au sous-traitant,
+// partagé entre toutes les agences avec lesquelles il travaille.
+model ContractorProfile {
+  id             String             @id @default(uuid())
+  userId         String             @unique
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  competences    String[]
+  tarifJour      Decimal?           @db.Decimal(10, 2)
+  tarifHeure     Decimal?           @db.Decimal(10, 2)
+  disponibilite  Disponibilite      @default(DISPONIBLE)
+  statut         StatutSousTraitant @default(ACTIF)
+  noteMoyenne    Decimal?           @db.Decimal(3, 2)
+
+  documents      AdminDocument[]
+  organizations  OrganizationContractor[]
+
+  dateCreation   DateTime           @default(now())
+
+  @@map("contractor_profiles")
+}
+
+// Rattachement d'un sous-traitant à l'annuaire d'une agence (relation N-N).
+// Permet à chaque agence d'avoir son propre annuaire et sert de base aux
+// permissions : une agence ne voit un profil sous-traitant que via ce lien.
+model OrganizationContractor {
+  id                  String             @id @default(uuid())
+  organizationId      String
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contractorProfileId String
+  contractorProfile   ContractorProfile  @relation(fields: [contractorProfileId], references: [id], onDelete: Cascade)
+
+  dateAjout           DateTime           @default(now())
+
+  @@unique([organizationId, contractorProfileId])
+  @@map("organization_contractors")
+}
+
+model AdminDocument {
+  id                  String                    @id @default(uuid())
+  contractorProfileId String
+  contractorProfile   ContractorProfile         @relation(fields: [contractorProfileId], references: [id], onDelete: Cascade)
+
+  type                TypeDocumentAdministratif
+  fichierUrl          String
+  dateExpiration      DateTime?
+  dateUpload          DateTime                  @default(now())
+
+  @@map("admin_documents")
+}
+
+model Invitation {
+  id             String    @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email          String
+  role           Role
+  token          String    @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  dateCreation   DateTime  @default(now())
+
+  @@map("invitations")
+}
+
+// ---------------------------------------------------------------------------
+// Missions
+// ---------------------------------------------------------------------------
+
+model Mission {
+  id             String        @id @default(uuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  titre           String
+  descriptionBrief String?
+  sousTraitantId  String?
+  sousTraitant    User?         @relation("MissionsSousTraitant", fields: [sousTraitantId], references: [id])
+
+  clientFinal     String?
+  dateDebut       DateTime?
+  dateEcheance    DateTime?
+  statut          StatutMission @default(BRIEF_ENVOYE)
+  budgetPrevu     Decimal?      @db.Decimal(10, 2)
+  tarifConvenu    Decimal?      @db.Decimal(10, 2)
+
+  dateCreation    DateTime      @default(now())
+
+  brief           Brief?
+  contrats        Contract[]
+  livrables       Deliverable[]
+  factures        Invoice[]
+  commentaires    MissionComment[]
+
+  @@index([organizationId, statut])
+  @@index([sousTraitantId])
+  @@map("missions")
+}
+
+model Brief {
+  id            String   @id @default(uuid())
+  missionId     String   @unique
+  mission       Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  contenuTexte  String?
+  fichiers      BriefFile[]
+
+  dateCreation  DateTime @default(now())
+
+  @@map("briefs")
+}
+
+model BriefFile {
+  id         String  @id @default(uuid())
+  briefId    String
+  brief      Brief   @relation(fields: [briefId], references: [id], onDelete: Cascade)
+
+  fichierUrl String
+  nomFichier String
+
+  @@map("brief_files")
+}
+
+model MissionComment {
+  id         String   @id @default(uuid())
+  missionId  String
+  mission    Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  auteurId   String
+  auteur     User     @relation(fields: [auteurId], references: [id])
+
+  contenu    String
+  dateCreation DateTime @default(now())
+
+  @@index([missionId])
+  @@map("mission_comments")
+}
+
+// ---------------------------------------------------------------------------
+// Contrats
+// ---------------------------------------------------------------------------
+
+model Contract {
+  id              String         @id @default(uuid())
+  missionId       String
+  mission         Mission        @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  templateUtilise String
+  fichierPdfGenere String?
+  fichierSigneUrl  String?
+  statut          StatutContrat  @default(BROUILLON)
+  dateEnvoi       DateTime?
+  dateSignature   DateTime?
+
+  dateCreation    DateTime       @default(now())
+
+  @@index([missionId])
+  @@map("contracts")
+}
+
+// ---------------------------------------------------------------------------
+// Livrables
+// ---------------------------------------------------------------------------
+
+model Deliverable {
+  id                   String          @id @default(uuid())
+  missionId            String
+  mission              Mission         @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  version              Int             @default(1)
+  fichierOuLien        String
+  commentaireSousTraitant String?
+  statut               StatutLivrable  @default(SOUMIS)
+  commentaireValidation String?
+
+  dateSoumission       DateTime        @default(now())
+
+  @@index([missionId])
+  @@map("deliverables")
+}
+
+// ---------------------------------------------------------------------------
+// Factures
+// ---------------------------------------------------------------------------
+
+model Invoice {
+  id                  String        @id @default(uuid())
+  missionId           String
+  mission             Mission       @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  sousTraitantId      String
+  sousTraitant        User          @relation("FacturesSousTraitant", fields: [sousTraitantId], references: [id])
+
+  montant             Decimal       @db.Decimal(10, 2)
+  fichierFacture      String
+  statut              StatutFacture @default(RECUE)
+
+  dateReception        DateTime     @default(now())
+  datePaiementPrevue   DateTime?
+  datePaiementReel     DateTime?
+
+  @@index([missionId])
+  @@index([sousTraitantId])
+  @@map("invoices")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id             String           @id @default(uuid())
+  utilisateurId  String
+  utilisateur    User             @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+
+  type           TypeNotification
+  contenu        String
+  lu             Boolean          @default(false)
+  dateCreation   DateTime         @default(now())
+
+  @@index([utilisateurId, lu])
+  @@map("notifications")
+}

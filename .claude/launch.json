@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["dotenv", "-e", ".env", "--", "npm", "run", "start:dev", "-w", "apps/api"],
+      "port": 3001
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["dotenv", "-e", ".env", "--", "npm", "run", "dev", "-w", "apps/web"],
+      "port": 3000
+    }
+  ]
+}
