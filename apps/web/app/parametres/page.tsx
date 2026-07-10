@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
@@ -14,8 +15,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { PRICING_PLANS } from "@/lib/pricing";
 import type { OrgMember } from "@/lib/types";
-import { Role } from "@gst/shared-types";
+import { PlanAbonnement, Role } from "@gst/shared-types";
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
@@ -103,13 +105,100 @@ function SettingsContent() {
         </CardContent>
       </Card>
 
-      <Card className="opacity-70">
-        <CardHeader>
-          <CardTitle className="text-sm">Abonnement</CardTitle>
-          <CardDescription>Intégration Stripe à venir (hors périmètre du MVP).</CardDescription>
-        </CardHeader>
-      </Card>
+      {isAdmin && <BillingSection />}
     </div>
+  );
+}
+
+interface BillingStatus {
+  planAbonnement: string;
+  stripeStatus: string | null;
+  hasStripeCustomer: boolean;
+}
+
+function BillingSection() {
+  useEffect(() => {
+    const checkout = new URLSearchParams(window.location.search).get("checkout");
+    if (checkout === "success") toast.success("Abonnement activé.");
+    if (checkout === "cancel") toast.info("Paiement annulé.");
+  }, []);
+
+  const statusQuery = useQuery({
+    queryKey: ["billing-status"],
+    queryFn: () => apiClient.get<BillingStatus>("/billing/status"),
+  });
+
+  const checkout = useMutation({
+    mutationFn: (plan: string) => apiClient.post<{ url: string }>("/billing/checkout", { plan }),
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Impossible de démarrer le paiement."),
+  });
+
+  const portal = useMutation({
+    mutationFn: () => apiClient.get<{ url: string }>("/billing/portal"),
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Impossible d'ouvrir la gestion d'abonnement."),
+  });
+
+  const currentPlan = statusQuery.data?.planAbonnement;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-sm">Abonnement</CardTitle>
+            <CardDescription>
+              Forfait actuel :{" "}
+              {currentPlan === PlanAbonnement.ESSAI ? "essai gratuit" : currentPlan ?? "…"}
+            </CardDescription>
+          </div>
+          {statusQuery.data?.hasStripeCustomer && (
+            <Button variant="outline" size="sm" onClick={() => portal.mutate()} disabled={portal.isPending}>
+              Gérer mon abonnement
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {PRICING_PLANS.map((plan) => {
+            const isCurrent = currentPlan === plan.id;
+            return (
+              <div
+                key={plan.id}
+                className={`flex flex-col gap-3 rounded-lg border p-4 ${plan.highlighted ? "border-primary" : ""}`}
+              >
+                <div className="flex items-baseline justify-between">
+                  <span className="font-medium">{plan.name}</span>
+                  <span className="text-sm text-muted-foreground">{plan.price} €/mois</span>
+                </div>
+                <ul className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-1.5">
+                      <Check className="mt-0.5 size-3.5 shrink-0 text-primary" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  variant={isCurrent ? "outline" : "default"}
+                  disabled={isCurrent || checkout.isPending}
+                  onClick={() => checkout.mutate(plan.id)}
+                  className="mt-auto"
+                >
+                  {isCurrent ? "Forfait actuel" : "Choisir ce forfait"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

@@ -7,7 +7,9 @@ import helmet from "helmet";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // rawBody: true expose req.rawBody sur toutes les routes, nécessaire pour
+  // vérifier la signature des webhooks Stripe sans casser le parsing JSON standard.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
   app.use(helmet({ crossOriginResourcePolicy: false }));
   app.enableCors({ origin: process.env.WEB_URL ?? "http://localhost:3000", credentials: true });
   app.setGlobalPrefix("api");
