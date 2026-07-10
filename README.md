@@ -1,4 +1,4 @@
-# Gestion de sous-traitants
+# Maillon
 
 SaaS B2B pour agences (marketing, création, dev, communication) qui gèrent un pool de freelances réguliers : brief → contrat → livrable → validation → paiement, avec un espace agence et un portail sous-traitant externe.
 

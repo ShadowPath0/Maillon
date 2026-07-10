@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -48,10 +49,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-muted/30">
       <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r bg-background">
         <div className="flex h-14 items-center gap-2 border-b px-4">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-            G
-          </div>
-          <span className="text-sm font-semibold">Gestion sous-traitants</span>
+          <LogoMark size={22} className="text-primary" />
+          <span className="text-sm font-semibold tracking-tight">Maillon</span>
         </div>
         <nav className="flex-1 space-y-1 p-3">
           {NAV_ITEMS.map((item) => {

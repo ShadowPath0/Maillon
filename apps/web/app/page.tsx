@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { Briefcase, FileSignature, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/logo";
 
 export default function HomePage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-muted/30 p-8 text-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
-          G
+        <div className="flex size-14 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <LogoMark size={30} />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight">Gestion de sous-traitants</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Maillon</h1>
         <p className="max-w-md text-muted-foreground">
-          Centralisez briefs, contrats, livrables et paiements avec vos freelances, du premier brief au virement.
+          Chaque sous-traitant, un maillon fiable de votre agence : briefs, contrats, livrables et paiements, du
+          premier brief au virement.
         </p>
       </div>
 

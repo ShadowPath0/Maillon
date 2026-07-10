@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Briefcase, Receipt, UserCircle, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -38,7 +39,11 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-10 border-b bg-background">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-6">
           <div className="flex items-center gap-8">
-            <span className="text-sm font-semibold">Portail sous-traitant</span>
+            <div className="flex items-center gap-2">
+              <LogoMark size={20} className="text-primary" />
+              <span className="text-sm font-semibold tracking-tight">Maillon</span>
+              <span className="text-sm text-muted-foreground">· Portail sous-traitant</span>
+            </div>
             <nav className="flex gap-1">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;

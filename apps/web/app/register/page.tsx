@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LogoMark } from "@/components/logo";
 
 export default function RegisterPage() {
   const { registerAgency } = useAuth();
@@ -38,6 +39,10 @@ export default function RegisterPage() {
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-8">
       <Card className="w-full max-w-sm">
         <CardHeader>
+          <div className="mb-1 flex items-center gap-2">
+            <LogoMark size={20} className="text-primary" />
+            <span className="text-sm font-semibold tracking-tight">Maillon</span>
+          </div>
           <CardTitle className="text-xl">Créer votre agence</CardTitle>
           <CardDescription>Un compte administrateur sera créé pour vous.</CardDescription>
         </CardHeader>

@@ -4,8 +4,8 @@ import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Gestion de sous-traitants",
-  description: "Pilotez vos freelances : briefs, contrats, livrables, paiements.",
+  title: "Maillon",
+  description: "Chaque sous-traitant, un maillon fiable de votre agence : briefs, contrats, livrables, paiements.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
