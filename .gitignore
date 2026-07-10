@@ -12,3 +12,5 @@ apps/api/generated/
 /storage/
 **/storage/uploads/
 .DS_Store
+test.bat
+Nouveau Document texte.txt
