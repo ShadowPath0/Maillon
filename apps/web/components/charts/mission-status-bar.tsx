@@ -16,7 +16,7 @@ export function MissionStatusBar({ counts }: { counts: Record<string, number> })
   const total = SEGMENTS.reduce((sum, s) => sum + (counts[s.key] ?? 0), 0);
 
   if (total === 0) {
-    return <p className="text-sm text-muted-foreground">Aucune mission pour l'instant.</p>;
+    return <p className="text-sm text-muted-foreground">Aucune mission pour l&apos;instant.</p>;
   }
 
   return (

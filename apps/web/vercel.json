@@ -1,0 +1,3 @@
+{
+  "buildCommand": "cd ../../packages/shared-types && npm run build && cd ../../apps/web && npm run build"
+}
