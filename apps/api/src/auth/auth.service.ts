@@ -17,8 +17,11 @@ import { LoginDto } from "./dto/login.dto";
 import { InviteMemberDto } from "./dto/invite-member.dto";
 import { InviteContractorDto } from "./dto/invite-contractor.dto";
 import { AcceptInvitationDto } from "./dto/accept-invitation.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 
 const INVITATION_TTL_DAYS = 7;
+const PASSWORD_RESET_TTL_MINUTES = 60;
 
 @Injectable()
 export class AuthService {
@@ -268,5 +271,50 @@ export class AuthService {
 
     const authUser = this.toAuthenticatedUser(user);
     return { user: authUser, tokens: this.issueTokens(authUser) };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    // Toujours la même réponse, que le compte existe ou non : on ne révèle jamais
+    // si un email est enregistré (évite l'énumération de comptes).
+    const genericResponse = {
+      message: "Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.",
+    };
+    if (!user || user.deletedAt) {
+      return genericResponse;
+    }
+
+    const token = randomBytes(32).toString("hex");
+    await this.prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        token,
+        expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000),
+      },
+    });
+
+    const link = `${process.env.WEB_URL ?? "http://localhost:3000"}/reinitialiser-mot-de-passe/${token}`;
+    await this.email.send(
+      user.email,
+      "Réinitialisation de votre mot de passe",
+      `<p>Vous avez demandé la réinitialisation de votre mot de passe. <a href="${link}">Cliquez ici pour en choisir un nouveau</a>. Ce lien expire dans une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>`,
+    );
+
+    return genericResponse;
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const resetToken = await this.prisma.passwordResetToken.findUnique({ where: { token: dto.token } });
+    if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+      throw new BadRequestException("Ce lien de réinitialisation est invalide ou a expiré.");
+    }
+
+    const motDePasseHash = await argon2.hash(dto.motDePasse);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: resetToken.userId }, data: { motDePasseHash } }),
+      this.prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
+    ]);
+
+    return { message: "Mot de passe mis à jour. Vous pouvez vous connecter." };
   }
 }

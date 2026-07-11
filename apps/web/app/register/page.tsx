@@ -18,11 +18,16 @@ export default function RegisterPage() {
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!consent) {
+      setError("Merci d'accepter les conditions pour continuer.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
@@ -71,6 +76,25 @@ export default function RegisterPage() {
                 minLength={8}
               />
             </div>
+            <label className="flex items-start gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="mt-0.5 size-3.5 shrink-0"
+              />
+              <span>
+                J&apos;accepte les{" "}
+                <Link href="/cgu-cgv" className="underline underline-offset-2" target="_blank">
+                  conditions générales
+                </Link>{" "}
+                et la{" "}
+                <Link href="/confidentialite" className="underline underline-offset-2" target="_blank">
+                  politique de confidentialité
+                </Link>
+                .
+              </span>
+            </label>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" disabled={submitting} className="mt-1">
               {submitting ? "Création..." : "Créer mon agence"}

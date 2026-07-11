@@ -179,6 +179,17 @@ export default function HomePage() {
             <LogoMark size={16} className="text-primary" />
             <span>Maillon</span>
           </div>
+          <div className="flex gap-4">
+            <Link href="/mentions-legales" className="hover:text-foreground">
+              Mentions légales
+            </Link>
+            <Link href="/confidentialite" className="hover:text-foreground">
+              Confidentialité
+            </Link>
+            <Link href="/cgu-cgv" className="hover:text-foreground">
+              CGU/CGV
+            </Link>
+          </div>
           <p>© {new Date().getFullYear()} Maillon. Tous droits réservés.</p>
         </div>
       </footer>

@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
 import { PrismaModule } from "./prisma/prisma.module";
 import { EmailModule } from "./email/email.module";
@@ -22,6 +23,7 @@ import { RolesGuard } from "./auth/guards/roles.guard";
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{ name: "default", ttl: 60000, limit: 60 }]),
     PrismaModule,
     EmailModule,
     StorageModule,
@@ -37,6 +39,7 @@ import { RolesGuard } from "./auth/guards/roles.guard";
     BillingModule,
   ],
   providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

@@ -1,20 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import { ApiError } from "@/lib/api-client";
+import { useParams, useRouter } from "next/navigation";
+import { apiClient, ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoMark } from "@/components/logo";
 
-export default function LoginPage() {
-  const { login } = useAuth();
+export default function ResetPasswordPage() {
+  const params = useParams<{ token: string }>();
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -24,10 +21,10 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, motDePasse);
-      router.push("/dashboard");
+      await apiClient.post("/auth/reset-password", { token: params.token, motDePasse });
+      router.push("/login");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Connexion impossible.");
+      setError(err instanceof ApiError ? err.message : "Ce lien est invalide ou a expiré.");
     } finally {
       setSubmitting(false);
     }
@@ -41,41 +38,27 @@ export default function LoginPage() {
             <LogoMark size={20} className="text-primary" />
             <span className="text-sm font-semibold tracking-tight">Maillon</span>
           </div>
-          <CardTitle className="text-xl">Connexion</CardTitle>
-          <CardDescription>Accédez à votre espace agence ou sous-traitant.</CardDescription>
+          <CardTitle className="text-xl">Nouveau mot de passe</CardTitle>
+          <CardDescription>Choisis un nouveau mot de passe pour ton compte.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Mot de passe</Label>
-                <Link href="/mot-de-passe-oublie" className="text-xs text-muted-foreground underline underline-offset-2">
-                  Mot de passe oublié ?
-                </Link>
-              </div>
+              <Label htmlFor="password">Nouveau mot de passe (8 caractères min.)</Label>
               <Input
                 id="password"
                 type="password"
                 value={motDePasse}
                 onChange={(e) => setMotDePasse(e.target.value)}
                 required
+                minLength={8}
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" disabled={submitting} className="mt-1">
-              {submitting ? "Connexion..." : "Se connecter"}
+              {submitting ? "Enregistrement..." : "Enregistrer le nouveau mot de passe"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Pas encore de compte agence ?{" "}
-            <Link href="/register" className="font-medium text-foreground underline underline-offset-4">
-              Créer une agence
-            </Link>
-          </p>
         </CardContent>
       </Card>
     </main>

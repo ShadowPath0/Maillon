@@ -128,8 +128,22 @@ model User {
   facturesEmises      Invoice[]      @relation("FacturesSousTraitant")
   notifications       Notification[]
   commentairesMission MissionComment[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String    @unique
+  expiresAt    DateTime
+  usedAt       DateTime?
+  dateCreation DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 // Profil freelance : compétences, tarifs, disponibilité — propre au sous-traitant,

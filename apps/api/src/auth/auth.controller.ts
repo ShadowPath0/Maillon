@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
 import { RegisterAgencyDto } from "./dto/register-agency.dto";
 import { LoginDto } from "./dto/login.dto";
@@ -6,6 +7,8 @@ import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { InviteMemberDto } from "./dto/invite-member.dto";
 import { InviteContractorDto } from "./dto/invite-contractor.dto";
 import { AcceptInvitationDto } from "./dto/accept-invitation.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { Public } from "./decorators/public.decorator";
 import { Roles } from "./decorators/roles.decorator";
 import { CurrentUser } from "./decorators/current-user.decorator";
@@ -23,9 +26,24 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post("login")
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post("forgot-password")
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post("reset-password")
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @Public()
