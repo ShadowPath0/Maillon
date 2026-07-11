@@ -16,6 +16,7 @@ import { DeliverablesModule } from "./deliverables/deliverables.module";
 import { InvoicesModule } from "./invoices/invoices.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { BillingModule } from "./billing/billing.module";
+import { SupportModule } from "./support/support.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
 
@@ -37,6 +38,7 @@ import { RolesGuard } from "./auth/guards/roles.guard";
     InvoicesModule,
     DashboardModule,
     BillingModule,
+    SupportModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

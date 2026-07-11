@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
@@ -213,58 +213,96 @@ function BillingSection() {
   );
 }
 
+function InviteLinkResult({ link, emailSent }: { link: string; emailSent: boolean }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-3">
+      <p className="text-xs text-muted-foreground">
+        {emailSent
+          ? "Un email vient d'être envoyé. Tu peux aussi transmettre ce lien toi-même (SMS, WhatsApp...) :"
+          : "L'email n'a pas pu être envoyé automatiquement. Transmets ce lien toi-même (SMS, WhatsApp, email...) :"}
+      </p>
+      <div className="flex gap-2">
+        <Input readOnly value={link} className="text-xs" onFocus={(e) => e.target.select()} />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            navigator.clipboard.writeText(link);
+            toast.success("Lien copié.");
+          }}
+        >
+          <Copy className="size-4" />
+          Copier
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function InviteMemberForm() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>(Role.MEMBRE);
+  const [result, setResult] = useState<{ link: string; emailSent: boolean } | null>(null);
 
   const invite = useMutation({
-    mutationFn: () => apiClient.post("/auth/invite-member", { email, role }),
-    onSuccess: () => {
-      toast.success("Invitation envoyée.");
+    mutationFn: () => apiClient.post<{ link: string; emailSent: boolean }>("/auth/invite-member", { email, role }),
+    onSuccess: (data) => {
+      toast.success("Invitation créée.");
+      setResult(data);
       setEmail("");
     },
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Erreur lors de l'invitation."),
   });
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        invite.mutate();
-      }}
-      className="flex flex-wrap items-end gap-3 border-t pt-4"
-    >
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="member-email">Email</Label>
-        <Input id="member-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-56" />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label>Rôle</Label>
-        <Select value={role} onValueChange={setRole}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={Role.MEMBRE}>Membre</SelectItem>
-            <SelectItem value={Role.ADMIN}>Admin</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button type="submit" disabled={invite.isPending}>
-        Inviter
-      </Button>
-    </form>
+    <div className="flex flex-col gap-3 border-t pt-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          invite.mutate();
+        }}
+        className="flex flex-wrap items-end gap-3"
+      >
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="member-email">Email</Label>
+          <Input id="member-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-56" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>Rôle</Label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={Role.MEMBRE}>Membre</SelectItem>
+              <SelectItem value={Role.ADMIN}>Admin</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button type="submit" disabled={invite.isPending}>
+          Inviter
+        </Button>
+      </form>
+      {result && <InviteLinkResult link={result.link} emailSent={result.emailSent} />}
+    </div>
   );
 }
 
 function InviteContractorForm() {
   const [email, setEmail] = useState("");
   const [nom, setNom] = useState("");
+  const [result, setResult] = useState<{ link: string; emailSent: boolean } | { linkedExisting: true } | null>(null);
 
   const invite = useMutation({
-    mutationFn: () => apiClient.post("/auth/invite-contractor", { email, nom: nom || undefined }),
-    onSuccess: () => {
-      toast.success("Invitation envoyée.");
+    mutationFn: () =>
+      apiClient.post<{ link: string; emailSent: boolean } | { linkedExisting: true; emailSent: boolean }>(
+        "/auth/invite-contractor",
+        { email, nom: nom || undefined },
+      ),
+    onSuccess: (data) => {
+      toast.success("linkedExisting" in data ? "Sous-traitant rattaché à votre agence." : "Invitation créée.");
+      setResult(data);
       setEmail("");
       setNom("");
     },
@@ -272,24 +310,27 @@ function InviteContractorForm() {
   });
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        invite.mutate();
-      }}
-      className="flex flex-wrap items-end gap-3"
-    >
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contractor-email">Email</Label>
-        <Input id="contractor-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-56" />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contractor-nom">Nom (optionnel)</Label>
-        <Input id="contractor-nom" value={nom} onChange={(e) => setNom(e.target.value)} className="w-56" />
-      </div>
-      <Button type="submit" disabled={invite.isPending}>
-        Inviter
-      </Button>
-    </form>
+    <div className="flex flex-col gap-3">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          invite.mutate();
+        }}
+        className="flex flex-wrap items-end gap-3"
+      >
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="contractor-email">Email</Label>
+          <Input id="contractor-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-56" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="contractor-nom">Nom (optionnel)</Label>
+          <Input id="contractor-nom" value={nom} onChange={(e) => setNom(e.target.value)} className="w-56" />
+        </div>
+        <Button type="submit" disabled={invite.isPending}>
+          Inviter
+        </Button>
+      </form>
+      {result && "link" in result && <InviteLinkResult link={result.link} emailSent={result.emailSent} />}
+    </div>
   );
 }

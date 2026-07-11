@@ -25,6 +25,8 @@ const VARIANTS: Record<string, Variant> = {
   INACTIF: "muted",
   ADMIN: "secondary",
   MEMBRE: "muted",
+  NOUVEAU: "warning",
+  TRAITE: "success",
 };
 
 const LABELS: Record<string, string> = {
@@ -49,6 +51,8 @@ const LABELS: Record<string, string> = {
   INACTIF: "Inactif",
   ADMIN: "Admin",
   MEMBRE: "Membre",
+  NOUVEAU: "Nouveau",
+  TRAITE: "Traité",
 };
 
 export function StatusBadge({ status }: { status: string }) {

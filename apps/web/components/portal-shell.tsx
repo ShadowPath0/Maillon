@@ -6,6 +6,7 @@ import { Briefcase, Receipt, UserCircle, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/logo";
+import { SupportContactDialog } from "@/components/support-contact-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -64,23 +65,26 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-md p-1.5 hover:bg-secondary/60">
-              <Avatar className="size-7">
-                <AvatarFallback>{user ? initials(user.nom) : "?"}</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem disabled className="opacity-100">
-                {user?.email}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
-                <LogOut className="mr-2 size-4" />
-                Se déconnecter
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1">
+            <SupportContactDialog variant="pill" />
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 rounded-md p-1.5 hover:bg-secondary/60">
+                <Avatar className="size-7">
+                  <AvatarFallback>{user ? initials(user.nom) : "?"}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem disabled className="opacity-100">
+                  {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive">
+                  <LogOut className="mr-2 size-4" />
+                  Se déconnecter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-4xl p-6">{children}</main>

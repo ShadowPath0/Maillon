@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/logo";
+import { SupportContactDialog } from "@/components/support-contact-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -72,6 +73,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="border-t p-3">
+          <div className="mb-1">
+            <SupportContactDialog />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-md p-2 text-left hover:bg-secondary/60">
               <Avatar>

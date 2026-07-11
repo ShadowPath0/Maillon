@@ -83,6 +83,11 @@ enum PlanAbonnement {
   PRO
 }
 
+enum StatutSupportMessage {
+  NOUVEAU
+  TRAITE
+}
+
 // ---------------------------------------------------------------------------
 // Agence / utilisateurs
 // ---------------------------------------------------------------------------
@@ -367,4 +372,24 @@ model Notification {
 
   @@index([utilisateurId, lu])
   @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Support
+// ---------------------------------------------------------------------------
+
+// Pas de relation FK vers User : on snapshote l'email/le nom au moment de
+// l'envoi pour que le message reste lisible même après suppression RGPD
+// du compte (voir UsersService.deleteOwnAccount).
+model SupportMessage {
+  id             String               @id @default(uuid())
+  userId         String
+  userEmail      String
+  userNom        String
+  message        String
+  statut         StatutSupportMessage @default(NOUVEAU)
+  dateCreation   DateTime             @default(now())
+
+  @@index([statut])
+  @@map("support_messages")
 }

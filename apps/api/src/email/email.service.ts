@@ -13,10 +13,11 @@ export class EmailService {
     this.from = process.env.EMAIL_FROM ?? "notifications@example.com";
   }
 
-  async send(to: string, subject: string, html: string): Promise<void> {
+  /** Renvoie `true` si l'email a réellement été envoyé, `false` s'il est désactivé (pas de clé). */
+  async send(to: string, subject: string, html: string): Promise<boolean> {
     if (!this.resend) {
       this.logger.log(`[email désactivé, RESEND_API_KEY absent] À: ${to} — ${subject}`);
-      return;
+      return false;
     }
     // Le SDK Resend ne rejette jamais la promesse en cas d'échec : il faut
     // vérifier `error` explicitement, sinon un envoi refusé (clé invalide,
@@ -26,5 +27,6 @@ export class EmailService {
       this.logger.error(`Échec d'envoi d'email à ${to} (${subject}) : ${error.name} — ${error.message}`);
       throw new BadRequestException(`Échec de l'envoi de l'email : ${error.message}`);
     }
+    return true;
   }
 }

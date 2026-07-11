@@ -126,6 +126,17 @@ export class AuthService {
     return this.toAuthenticatedUser(user);
   }
 
+  // L'email est un plus, jamais un pré-requis : si l'envoi échoue (domaine non
+  // vérifié, clé invalide...), l'agence doit quand même pouvoir récupérer le
+  // lien d'invitation et le transmettre elle-même (SMS, WhatsApp, etc.).
+  private async trySendEmail(to: string, subject: string, html: string): Promise<boolean> {
+    try {
+      return await this.email.send(to, subject, html);
+    } catch {
+      return false;
+    }
+  }
+
   async inviteMember(organizationId: string, dto: InviteMemberDto) {
     const existingUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existingUser) {
@@ -144,13 +155,13 @@ export class AuthService {
     });
 
     const link = `${process.env.WEB_URL ?? "http://localhost:3000"}/invitations/${token}`;
-    await this.email.send(
+    const emailSent = await this.trySendEmail(
       dto.email,
       "Invitation à rejoindre votre agence",
       `<p>Vous avez été invité(e) à rejoindre une agence. <a href="${link}">Cliquez ici pour créer votre compte</a>.</p>`,
     );
 
-    return invitation;
+    return { ...invitation, link, emailSent };
   }
 
   async inviteContractor(organizationId: string, dto: InviteContractorDto) {
@@ -174,12 +185,12 @@ export class AuthService {
         create: { organizationId, contractorProfileId: existingUser.contractorProfile.id },
         update: {},
       });
-      await this.email.send(
+      const emailSent = await this.trySendEmail(
         dto.email,
         "Vous avez été ajouté à l'annuaire d'une agence",
         `<p>Une agence vous a ajouté à son annuaire de sous-traitants. Connectez-vous avec votre compte existant pour voir vos missions.</p>`,
       );
-      return { linkedExisting: true };
+      return { linkedExisting: true, emailSent };
     }
 
     const token = randomBytes(32).toString("hex");
@@ -194,13 +205,13 @@ export class AuthService {
     });
 
     const link = `${process.env.WEB_URL ?? "http://localhost:3000"}/invitations/${token}`;
-    await this.email.send(
+    const emailSent = await this.trySendEmail(
       dto.email,
       "Invitation à rejoindre le portail sous-traitant",
       `<p>Une agence souhaite collaborer avec vous. <a href="${link}">Cliquez ici pour créer votre compte</a>.</p>`,
     );
 
-    return invitation;
+    return { ...invitation, link, emailSent };
   }
 
   async acceptInvitation(dto: AcceptInvitationDto) {

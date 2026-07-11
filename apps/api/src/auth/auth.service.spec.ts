@@ -25,7 +25,7 @@ function buildPrismaMock() {
 
 function buildService(prisma: ReturnType<typeof buildPrismaMock>) {
   const jwt = new JwtService({ secret: "test-secret" });
-  const email = { send: jest.fn().mockResolvedValue(undefined) };
+  const email = { send: jest.fn().mockResolvedValue(true) };
   return new AuthService(prisma as any, jwt, email as any);
 }
 
