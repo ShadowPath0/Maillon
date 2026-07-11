@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { apiClient, ApiError } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { PRICING_PLANS } from "@/lib/pricing";
@@ -106,6 +107,16 @@ function SettingsContent() {
       </Card>
 
       {isAdmin && <BillingSection />}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Zone de danger</CardTitle>
+          <CardDescription>Supprimez définitivement votre compte et vos données personnelles.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DeleteAccountDialog />
+        </CardContent>
+      </Card>
     </div>
   );
 }

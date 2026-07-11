@@ -26,4 +26,9 @@ export class UsersController {
   updateProfile(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.id, dto);
   }
+
+  @Delete("me")
+  deleteOwnAccount(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.deleteOwnAccount(user);
+  }
 }

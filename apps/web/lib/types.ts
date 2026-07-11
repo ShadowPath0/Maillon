@@ -9,6 +9,11 @@ import type {
   TypeNotification,
 } from "@gst/shared-types";
 
+export interface PaginatedResult<T> {
+  data: T[];
+  meta: { page: number; pageSize: number; total: number; totalPages: number };
+}
+
 export interface OrgMember {
   id: string;
   email: string;

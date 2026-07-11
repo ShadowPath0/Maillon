@@ -8,11 +8,12 @@ import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiClient } from "@/lib/api-client";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { Invoice } from "@/lib/types";
+import type { Invoice, PaginatedResult } from "@/lib/types";
 import { Role } from "@gst/shared-types";
 
 export default function InvoicesPage() {
@@ -28,10 +29,14 @@ export default function InvoicesPage() {
 function InvoicesContent() {
   const queryClient = useQueryClient();
   const [statutFilter, setStatutFilter] = useState("all");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["invoices-overview", statutFilter],
-    queryFn: () => apiClient.get<Invoice[]>(`/factures${statutFilter !== "all" ? `?statut=${statutFilter}` : ""}`),
+    queryKey: ["invoices-overview", statutFilter, page],
+    queryFn: () =>
+      apiClient.get<PaginatedResult<Invoice>>(
+        `/factures?page=${page}${statutFilter !== "all" ? `&statut=${statutFilter}` : ""}`,
+      ),
   });
 
   const markToPay = useMutation({
@@ -108,7 +113,13 @@ function InvoicesContent() {
           Exporter en CSV
         </Button>
       </div>
-      <Select value={statutFilter} onValueChange={setStatutFilter}>
+      <Select
+        value={statutFilter}
+        onValueChange={(value) => {
+          setStatutFilter(value);
+          setPage(1);
+        }}
+      >
         <SelectTrigger className="w-48">
           <SelectValue />
         </SelectTrigger>
@@ -120,7 +131,21 @@ function InvoicesContent() {
           <SelectItem value="EN_RETARD">En retard</SelectItem>
         </SelectContent>
       </Select>
-      {isLoading ? <p className="text-sm text-muted-foreground">Chargement...</p> : <DataTable columns={columns} data={data ?? []} />}
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Chargement...</p>
+      ) : (
+        <>
+          <DataTable columns={columns} data={data?.data ?? []} />
+          {data && (
+            <Pagination
+              page={data.meta.page}
+              totalPages={data.meta.totalPages}
+              total={data.meta.total}
+              onPageChange={setPage}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

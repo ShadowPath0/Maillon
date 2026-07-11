@@ -11,6 +11,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { UPLOAD_MULTER_OPTIONS } from "../common/upload.config";
 import { ContractorsService } from "./contractors.service";
 import { UpdateContractorProfileDto } from "./dto/update-contractor-profile.dto";
 import { UploadDocumentDto } from "./dto/upload-document.dto";
@@ -44,7 +45,7 @@ export class ContractorsController {
 
   @Roles(Role.SOUS_TRAITANT)
   @Post("me/documents")
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor("file", UPLOAD_MULTER_OPTIONS))
   uploadOwnDocument(
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFile() file: Express.Multer.File,

@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { UPLOAD_MULTER_OPTIONS } from "../common/upload.config";
 import { ContractsService } from "./contracts.service";
 import { ListContractsQueryDto } from "./dto/list-contracts-query.dto";
 import { Roles } from "../auth/decorators/roles.decorator";
@@ -34,7 +35,7 @@ export class ContractsController {
   }
 
   @Post(":id/signed")
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor("file", UPLOAD_MULTER_OPTIONS))
   uploadSigned(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,

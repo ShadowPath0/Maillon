@@ -4,6 +4,7 @@ import { StorageService } from "../storage/storage.service";
 import { CreateInvoiceDto } from "./dto/create-invoice.dto";
 import { MarkToPayDto } from "./dto/mark-to-pay.dto";
 import { ListInvoicesQueryDto } from "./dto/list-invoices-query.dto";
+import { resolvePagination, toPaginatedResult } from "../common/pagination";
 import type { AuthenticatedUser } from "@gst/shared-types";
 import { Role, StatutFacture } from "@gst/shared-types";
 
@@ -51,23 +52,40 @@ export class InvoicesService {
   }
 
   async list(currentUser: AuthenticatedUser, query: ListInvoicesQueryDto) {
+    const { skip, take, page, pageSize } = resolvePagination(query);
+
     if (currentUser.role === Role.SOUS_TRAITANT) {
-      return this.prisma.invoice.findMany({
-        where: { missionId: query.missionId, sousTraitantId: currentUser.id, statut: query.statut },
-        include: { mission: { select: { titre: true } } },
-        orderBy: { dateReception: "desc" },
-      });
+      const where = { missionId: query.missionId, sousTraitantId: currentUser.id, statut: query.statut };
+      const [data, total] = await this.prisma.$transaction([
+        this.prisma.invoice.findMany({
+          where,
+          include: { mission: { select: { titre: true } } },
+          orderBy: { dateReception: "desc" },
+          skip,
+          take,
+        }),
+        this.prisma.invoice.count({ where }),
+      ]);
+      return toPaginatedResult(data, total, page, pageSize);
     }
-    return this.prisma.invoice.findMany({
-      where: {
-        missionId: query.missionId,
-        mission: { organizationId: currentUser.organizationId! },
-        statut: query.statut,
-        sousTraitantId: query.sousTraitantId,
-      },
-      include: { mission: { select: { titre: true } }, sousTraitant: { select: { nom: true, email: true } } },
-      orderBy: { dateReception: "desc" },
-    });
+
+    const where = {
+      missionId: query.missionId,
+      mission: { organizationId: currentUser.organizationId! },
+      statut: query.statut,
+      sousTraitantId: query.sousTraitantId,
+    };
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.invoice.findMany({
+        where,
+        include: { mission: { select: { titre: true } }, sousTraitant: { select: { nom: true, email: true } } },
+        orderBy: { dateReception: "desc" },
+        skip,
+        take,
+      }),
+      this.prisma.invoice.count({ where }),
+    ]);
+    return toPaginatedResult(data, total, page, pageSize);
   }
 
   private async findAccessibleInvoice(currentUser: AuthenticatedUser, id: string) {

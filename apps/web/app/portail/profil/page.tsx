@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import { apiClient } from "@/lib/api-client";
 import { formatDate, fileUrl } from "@/lib/format";
 import type { ContractorProfileDetail } from "@/lib/types";
@@ -207,6 +208,16 @@ function PortailProfilContent() {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Zone de danger</CardTitle>
+          <CardDescription>Supprimez définitivement votre compte et vos données personnelles.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DeleteAccountDialog />
         </CardContent>
       </Card>
     </div>

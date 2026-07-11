@@ -5,6 +5,7 @@ import { StorageService } from "../storage/storage.service";
 import { UpdateContractorProfileDto } from "./dto/update-contractor-profile.dto";
 import { UploadDocumentDto } from "./dto/upload-document.dto";
 import { ListContractorsQueryDto } from "./dto/list-contractors-query.dto";
+import { resolvePagination, toPaginatedResult } from "../common/pagination";
 
 @Injectable()
 export class ContractorsService {
@@ -23,13 +24,24 @@ export class ContractorsService {
       },
     };
 
-    const links = await this.prisma.organizationContractor.findMany({
-      where,
-      include: { contractorProfile: { include: { user: true } } },
-      orderBy: { dateAjout: "desc" },
-    });
+    const { skip, take, page, pageSize } = resolvePagination(query);
+    const [links, total] = await this.prisma.$transaction([
+      this.prisma.organizationContractor.findMany({
+        where,
+        include: { contractorProfile: { include: { user: true } } },
+        orderBy: { dateAjout: "desc" },
+        skip,
+        take,
+      }),
+      this.prisma.organizationContractor.count({ where }),
+    ]);
 
-    return links.map((link) => this.toDirectoryEntry(link.contractorProfile));
+    return toPaginatedResult(
+      links.map((link) => this.toDirectoryEntry(link.contractorProfile)),
+      total,
+      page,
+      pageSize,
+    );
   }
 
   private toDirectoryEntry(profile: {

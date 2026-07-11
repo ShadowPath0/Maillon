@@ -6,6 +6,7 @@ import { CreateMissionDto } from "./dto/create-mission.dto";
 import { UpdateMissionDto } from "./dto/update-mission.dto";
 import { ListMissionsQueryDto } from "./dto/list-missions-query.dto";
 import { CreateCommentDto } from "./dto/create-comment.dto";
+import { resolvePagination, toPaginatedResult } from "../common/pagination";
 import type { AuthenticatedUser } from "@gst/shared-types";
 import { Role, TypeNotification } from "@gst/shared-types";
 
@@ -62,23 +63,39 @@ export class MissionsService {
   }
 
   async list(currentUser: AuthenticatedUser, query: ListMissionsQueryDto) {
+    const { skip, take, page, pageSize } = resolvePagination(query);
+
     if (currentUser.role === Role.SOUS_TRAITANT) {
-      return this.prisma.mission.findMany({
-        where: { sousTraitantId: currentUser.id, statut: query.statut },
-        include: { organization: { select: { nom: true } } },
-        orderBy: { dateCreation: "desc" },
-      });
+      const where = { sousTraitantId: currentUser.id, statut: query.statut };
+      const [data, total] = await this.prisma.$transaction([
+        this.prisma.mission.findMany({
+          where,
+          include: { organization: { select: { nom: true } } },
+          orderBy: { dateCreation: "desc" },
+          skip,
+          take,
+        }),
+        this.prisma.mission.count({ where }),
+      ]);
+      return toPaginatedResult(data, total, page, pageSize);
     }
 
-    return this.prisma.mission.findMany({
-      where: {
-        organizationId: currentUser.organizationId!,
-        statut: query.statut,
-        sousTraitantId: query.sousTraitantId,
-      },
-      include: { sousTraitant: { select: { id: true, nom: true, email: true } } },
-      orderBy: { dateCreation: "desc" },
-    });
+    const where = {
+      organizationId: currentUser.organizationId!,
+      statut: query.statut,
+      sousTraitantId: query.sousTraitantId,
+    };
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.mission.findMany({
+        where,
+        include: { sousTraitant: { select: { id: true, nom: true, email: true } } },
+        orderBy: { dateCreation: "desc" },
+        skip,
+        take,
+      }),
+      this.prisma.mission.count({ where }),
+    ]);
+    return toPaginatedResult(data, total, page, pageSize);
   }
 
   private async findAccessible(currentUser: AuthenticatedUser, missionId: string) {

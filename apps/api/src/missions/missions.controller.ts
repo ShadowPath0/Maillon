@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFiles, UseInterceptors } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
+import { UPLOAD_MULTER_OPTIONS } from "../common/upload.config";
 import { MissionsService } from "./missions.service";
 import { CreateMissionDto } from "./dto/create-mission.dto";
 import { UpdateMissionDto } from "./dto/update-mission.dto";
@@ -44,7 +45,7 @@ export class MissionsController {
 
   @Roles(Role.ADMIN, Role.MEMBRE)
   @Post(":id/brief/files")
-  @UseInterceptors(FilesInterceptor("files"))
+  @UseInterceptors(FilesInterceptor("files", 10, UPLOAD_MULTER_OPTIONS))
   addBriefFiles(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,

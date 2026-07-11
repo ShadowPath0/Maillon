@@ -1,14 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { RequireAuth } from "@/components/require-auth";
 import { PortalShell } from "@/components/portal-shell";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { Pagination } from "@/components/pagination";
 import { apiClient } from "@/lib/api-client";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { MissionListItem } from "@/lib/types";
+import type { MissionListItem, PaginatedResult } from "@/lib/types";
 import { Role } from "@gst/shared-types";
 
 export default function PortailMissionsPage() {
@@ -23,9 +25,10 @@ export default function PortailMissionsPage() {
 
 function PortailMissionsContent() {
   const router = useRouter();
+  const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
-    queryKey: ["portal-missions"],
-    queryFn: () => apiClient.get<MissionListItem[]>("/missions"),
+    queryKey: ["portal-missions", page],
+    queryFn: () => apiClient.get<PaginatedResult<MissionListItem>>(`/missions?page=${page}`),
   });
 
   const columns: Column<MissionListItem>[] = [
@@ -45,12 +48,22 @@ function PortailMissionsContent() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement...</p>
       ) : (
-        <DataTable
-          columns={columns}
-          data={data ?? []}
-          onRowClick={(m) => router.push(`/portail/missions/${m.id}`)}
-          emptyMessage="Aucune mission assignée pour l'instant."
-        />
+        <>
+          <DataTable
+            columns={columns}
+            data={data?.data ?? []}
+            onRowClick={(m) => router.push(`/portail/missions/${m.id}`)}
+            emptyMessage="Aucune mission assignée pour l'instant."
+          />
+          {data && (
+            <Pagination
+              page={data.meta.page}
+              totalPages={data.meta.totalPages}
+              total={data.meta.total}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

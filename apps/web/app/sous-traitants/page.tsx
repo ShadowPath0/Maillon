@@ -8,11 +8,12 @@ import { RequireAuth } from "@/components/require-auth";
 import { AppShell } from "@/components/app-shell";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { Pagination } from "@/components/pagination";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiClient } from "@/lib/api-client";
 import { formatMoney } from "@/lib/format";
-import type { ContractorDirectoryEntry } from "@/lib/types";
+import type { ContractorDirectoryEntry, PaginatedResult } from "@/lib/types";
 import { Role, Disponibilite } from "@gst/shared-types";
 
 export default function SousTraitantsPage() {
@@ -29,15 +30,15 @@ function SousTraitantsContent() {
   const router = useRouter();
   const [competence, setCompetence] = useState("");
   const [disponibilite, setDisponibilite] = useState<string>("all");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["sous-traitants", competence, disponibilite],
+    queryKey: ["sous-traitants", competence, disponibilite, page],
     queryFn: () => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ page: String(page) });
       if (competence) params.set("competence", competence);
       if (disponibilite !== "all") params.set("disponibilite", disponibilite);
-      const qs = params.toString();
-      return apiClient.get<ContractorDirectoryEntry[]>(`/sous-traitants${qs ? `?${qs}` : ""}`);
+      return apiClient.get<PaginatedResult<ContractorDirectoryEntry>>(`/sous-traitants?${params.toString()}`);
     },
   });
 
@@ -62,11 +63,20 @@ function SousTraitantsContent() {
           <Input
             placeholder="Filtrer par compétence"
             value={competence}
-            onChange={(e) => setCompetence(e.target.value)}
+            onChange={(e) => {
+              setCompetence(e.target.value);
+              setPage(1);
+            }}
             className="pl-8"
           />
         </div>
-        <Select value={disponibilite} onValueChange={setDisponibilite}>
+        <Select
+          value={disponibilite}
+          onValueChange={(value) => {
+            setDisponibilite(value);
+            setPage(1);
+          }}
+        >
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Disponibilité" />
           </SelectTrigger>
@@ -81,12 +91,22 @@ function SousTraitantsContent() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement...</p>
       ) : (
-        <DataTable
-          columns={columns}
-          data={data ?? []}
-          onRowClick={(c) => router.push(`/sous-traitants/${c.id}`)}
-          emptyMessage="Aucun sous-traitant dans votre annuaire pour l'instant."
-        />
+        <>
+          <DataTable
+            columns={columns}
+            data={data?.data ?? []}
+            onRowClick={(c) => router.push(`/sous-traitants/${c.id}`)}
+            emptyMessage="Aucun sous-traitant dans votre annuaire pour l'instant."
+          />
+          {data && (
+            <Pagination
+              page={data.meta.page}
+              totalPages={data.meta.totalPages}
+              total={data.meta.total}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

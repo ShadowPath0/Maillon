@@ -1,7 +1,8 @@
 import { IsIn, IsNumberString, IsOptional, IsString } from "class-validator";
 import { Disponibilite } from "@gst/shared-types";
+import { PaginationQueryDto } from "../../common/pagination";
 
-export class ListContractorsQueryDto {
+export class ListContractorsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   competence?: string;

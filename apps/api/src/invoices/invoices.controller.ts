@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
+import { UPLOAD_MULTER_OPTIONS } from "../common/upload.config";
 import { InvoicesService } from "./invoices.service";
 import { CreateInvoiceDto } from "./dto/create-invoice.dto";
 import { MarkToPayDto } from "./dto/mark-to-pay.dto";
@@ -16,7 +17,7 @@ export class InvoicesController {
 
   @Roles(Role.SOUS_TRAITANT)
   @Post("missions/:missionId/factures")
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor("file", UPLOAD_MULTER_OPTIONS))
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Param("missionId") missionId: string,

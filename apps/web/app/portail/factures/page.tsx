@@ -1,13 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RequireAuth } from "@/components/require-auth";
 import { PortalShell } from "@/components/portal-shell";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
+import { Pagination } from "@/components/pagination";
 import { apiClient } from "@/lib/api-client";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { Invoice } from "@/lib/types";
+import type { Invoice, PaginatedResult } from "@/lib/types";
 import { Role } from "@gst/shared-types";
 
 export default function PortailFacturesPage() {
@@ -21,9 +23,10 @@ export default function PortailFacturesPage() {
 }
 
 function PortailFacturesContent() {
+  const [page, setPage] = useState(1);
   const { data, isLoading } = useQuery({
-    queryKey: ["portal-invoices-all"],
-    queryFn: () => apiClient.get<Invoice[]>("/factures"),
+    queryKey: ["portal-invoices-all", page],
+    queryFn: () => apiClient.get<PaginatedResult<Invoice>>(`/factures?page=${page}`),
   });
 
   const columns: Column<Invoice>[] = [
@@ -44,7 +47,17 @@ function PortailFacturesContent() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement...</p>
       ) : (
-        <DataTable columns={columns} data={data ?? []} emptyMessage="Aucune facture déposée pour l'instant." />
+        <>
+          <DataTable columns={columns} data={data?.data ?? []} emptyMessage="Aucune facture déposée pour l'instant." />
+          {data && (
+            <Pagination
+              page={data.meta.page}
+              totalPages={data.meta.totalPages}
+              total={data.meta.total}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

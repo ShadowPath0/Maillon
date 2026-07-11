@@ -31,5 +31,5 @@ export function LegalSection({ title, children }: { title: string; children: Rea
 }
 
 export function Placeholder({ children }: { children: React.ReactNode }) {
-  return <span className="rounded bg-warning/20 px-1 py-0.5 font-medium text-warning-foreground">{children}</span>;
+  return <span>{children}</span>;
 }

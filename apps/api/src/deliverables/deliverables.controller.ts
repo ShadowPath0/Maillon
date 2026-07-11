@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { UPLOAD_MULTER_OPTIONS } from "../common/upload.config";
 import { DeliverablesService } from "./deliverables.service";
 import { SubmitDeliverableDto } from "./dto/submit-deliverable.dto";
 import { ReviewDeliverableDto } from "./dto/review-deliverable.dto";
@@ -19,7 +20,7 @@ export class DeliverablesController {
 
   @Roles(Role.SOUS_TRAITANT)
   @Post("missions/:missionId/livrables")
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(FileInterceptor("file", UPLOAD_MULTER_OPTIONS))
   submit(
     @CurrentUser() user: AuthenticatedUser,
     @Param("missionId") missionId: string,

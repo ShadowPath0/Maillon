@@ -10,12 +10,13 @@ import { AppShell } from "@/components/app-shell";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { KanbanBoard } from "@/components/kanban-board";
+import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { formatDate, formatMoney } from "@/lib/format";
-import type { MissionListItem } from "@/lib/types";
+import type { MissionListItem, PaginatedResult } from "@/lib/types";
 import { Role } from "@gst/shared-types";
 
 export default function MissionsPage() {
@@ -33,16 +34,35 @@ function MissionsContent() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"kanban" | "liste">("kanban");
   const [statutFilter, setStatutFilter] = useState("all");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["missions", statutFilter],
+  const kanbanQuery = useQuery({
+    queryKey: ["missions-kanban", statutFilter],
     queryFn: () =>
-      apiClient.get<MissionListItem[]>(`/missions${statutFilter !== "all" ? `?statut=${statutFilter}` : ""}`),
+      apiClient.get<PaginatedResult<MissionListItem>>(
+        `/missions?pageSize=200${statutFilter !== "all" ? `&statut=${statutFilter}` : ""}`,
+      ),
+    enabled: view === "kanban",
   });
+
+  const listQuery = useQuery({
+    queryKey: ["missions-liste", statutFilter, page],
+    queryFn: () =>
+      apiClient.get<PaginatedResult<MissionListItem>>(
+        `/missions?page=${page}${statutFilter !== "all" ? `&statut=${statutFilter}` : ""}`,
+      ),
+    enabled: view === "liste",
+  });
+
+  const isLoading = view === "kanban" ? kanbanQuery.isLoading : listQuery.isLoading;
+  const data = view === "kanban" ? kanbanQuery.data?.data : listQuery.data?.data;
 
   const updateStatus = useMutation({
     mutationFn: ({ id, statut }: { id: string; statut: string }) => apiClient.patch(`/missions/${id}`, { statut }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["missions"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["missions-kanban"] });
+      queryClient.invalidateQueries({ queryKey: ["missions-liste"] });
+    },
   });
 
   const columns: Column<MissionListItem>[] = [
@@ -92,7 +112,13 @@ function MissionsContent() {
           </button>
         </div>
         {view === "liste" && (
-          <Select value={statutFilter} onValueChange={setStatutFilter}>
+          <Select
+            value={statutFilter}
+            onValueChange={(value) => {
+              setStatutFilter(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
@@ -114,7 +140,17 @@ function MissionsContent() {
       ) : view === "kanban" ? (
         <KanbanBoard missions={data ?? []} onStatusChange={(id, statut) => updateStatus.mutate({ id, statut })} />
       ) : (
-        <DataTable columns={columns} data={data ?? []} onRowClick={(m) => router.push(`/missions/${m.id}`)} />
+        <>
+          <DataTable columns={columns} data={data ?? []} onRowClick={(m) => router.push(`/missions/${m.id}`)} />
+          {listQuery.data && (
+            <Pagination
+              page={listQuery.data.meta.page}
+              totalPages={listQuery.data.meta.totalPages}
+              total={listQuery.data.meta.total}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

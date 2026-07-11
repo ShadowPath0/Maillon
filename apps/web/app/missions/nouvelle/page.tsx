@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient, ApiError } from "@/lib/api-client";
-import type { ContractorDirectoryEntry } from "@/lib/types";
+import type { ContractorDirectoryEntry, PaginatedResult } from "@/lib/types";
 import { Role } from "@gst/shared-types";
 
 export default function NewMissionPage() {
@@ -37,10 +37,11 @@ function NewMissionForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { data: contractors } = useQuery({
-    queryKey: ["sous-traitants"],
-    queryFn: () => apiClient.get<ContractorDirectoryEntry[]>("/sous-traitants"),
+  const { data: contractorsPage } = useQuery({
+    queryKey: ["sous-traitants-all"],
+    queryFn: () => apiClient.get<PaginatedResult<ContractorDirectoryEntry>>("/sous-traitants?pageSize=100"),
   });
+  const contractors = contractorsPage?.data;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

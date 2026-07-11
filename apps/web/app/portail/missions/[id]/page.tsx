@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiClient } from "@/lib/api-client";
 import { formatDate, formatMoney, fileUrl } from "@/lib/format";
-import type { Contract, Deliverable, Invoice, MissionDetail } from "@/lib/types";
+import type { Contract, Deliverable, Invoice, MissionDetail, PaginatedResult } from "@/lib/types";
 import { Role } from "@gst/shared-types";
 
 export default function PortailMissionDetailPage() {
@@ -52,7 +52,8 @@ function PortailMissionDetailContent() {
   });
   const invoicesQuery = useQuery({
     queryKey: ["portal-invoices", missionId],
-    queryFn: () => apiClient.get<Invoice[]>(`/factures?missionId=${missionId}`),
+    queryFn: () => apiClient.get<PaginatedResult<Invoice>>(`/factures?missionId=${missionId}&pageSize=100`),
+    select: (res) => res.data,
   });
 
   const invalidateAll = () => {

@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { apiClient } from "@/lib/api-client";
 import { formatDate, formatMoney, fileUrl } from "@/lib/format";
-import type { Contract, Deliverable, Invoice, MissionDetail } from "@/lib/types";
+import type { Contract, Deliverable, Invoice, MissionDetail, PaginatedResult } from "@/lib/types";
 import { Role } from "@gst/shared-types";
 
 export default function MissionDetailPage() {
@@ -48,7 +48,8 @@ function MissionDetailContent() {
   });
   const invoicesQuery = useQuery({
     queryKey: ["invoices", missionId],
-    queryFn: () => apiClient.get<Invoice[]>(`/factures?missionId=${missionId}`),
+    queryFn: () => apiClient.get<PaginatedResult<Invoice>>(`/factures?missionId=${missionId}&pageSize=100`),
+    select: (res) => res.data,
   });
 
   const invalidateAll = () => {

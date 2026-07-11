@@ -1,7 +1,8 @@
 import { IsIn, IsOptional, IsUUID } from "class-validator";
 import { StatutMission } from "@gst/shared-types";
+import { PaginationQueryDto } from "../../common/pagination";
 
-export class ListMissionsQueryDto {
+export class ListMissionsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn([
     StatutMission.BRIEF_ENVOYE,
