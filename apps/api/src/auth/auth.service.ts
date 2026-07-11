@@ -294,11 +294,16 @@ export class AuthService {
     });
 
     const link = `${process.env.WEB_URL ?? "http://localhost:3000"}/reinitialiser-mot-de-passe/${token}`;
-    await this.email.send(
-      user.email,
-      "Réinitialisation de votre mot de passe",
-      `<p>Vous avez demandé la réinitialisation de votre mot de passe. <a href="${link}">Cliquez ici pour en choisir un nouveau</a>. Ce lien expire dans une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>`,
-    );
+    try {
+      await this.email.send(
+        user.email,
+        "Réinitialisation de votre mot de passe",
+        `<p>Vous avez demandé la réinitialisation de votre mot de passe. <a href="${link}">Cliquez ici pour en choisir un nouveau</a>. Ce lien expire dans une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>`,
+      );
+    } catch {
+      // On ne laisse jamais un échec d'envoi révéler si le compte existe :
+      // l'erreur est déjà journalisée par EmailService, la réponse reste générique.
+    }
 
     return genericResponse;
   }
